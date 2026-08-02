@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Calendar, Clock, User, MapPin, Search } from 'lucide-react'
 import QuantumBackground from '../components/QuantumBackground'
 import LottieLib from 'lottie-react'
@@ -18,6 +18,21 @@ export default function ClassTimetablePage() {
 
   const [selectedDay, setSelectedDay] = useState('ALL')
   const [showVideo, setShowVideo] = useState(true)
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false)
+        setSearchQuery('')
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   useEffect(() => {
     let timer;
@@ -116,25 +131,59 @@ export default function ClassTimetablePage() {
         </div>
 
         {/* Dropdown Section */}
-        <div className="max-w-md mx-auto glass-card p-6 mb-12 shadow-2xl relative z-20 border border-violet-primary/20">
+        <div className="max-w-md mx-auto glass-card p-6 mb-12 shadow-2xl relative z-50 border border-violet-primary/20">
           <label className="block text-sm font-semibold text-text-secondary mb-3">
             Select Your Class
           </label>
-          <div className="relative">
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              disabled={loadingClasses}
-              className="w-full appearance-none bg-slate-deep border border-slate-border text-text-primary rounded-xl pl-5 pr-12 py-4 focus:outline-none focus:border-violet-primary focus:ring-1 focus:ring-violet-primary transition-all duration-200 cursor-pointer"
-            >
-              <option value="">Select a class...</option>
-              {classes.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          <div className="relative" ref={dropdownRef}>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={isDropdownOpen && selectedClass ? selectedClass : "Search or select a class..."}
+                value={isDropdownOpen ? searchQuery : selectedClass || ''}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  if (!isDropdownOpen) setIsDropdownOpen(true)
+                }}
+                onClick={() => setIsDropdownOpen(true)}
+                disabled={loadingClasses}
+                className="w-full bg-slate-deep border border-slate-border text-text-primary rounded-xl pl-11 pr-12 py-4 focus:outline-none focus:border-violet-primary focus:ring-1 focus:ring-violet-primary transition-all duration-200 cursor-text"
+              />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+                <Search size={18} />
+              </div>
+              <div 
+                className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-text-muted hover:text-text-primary transition-colors"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6"/></svg>
+              </div>
             </div>
+
+            {isDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-slate-deep border border-slate-border rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar z-50">
+                {classes
+                  .filter(c => c.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map(c => (
+                    <div
+                      key={c}
+                      onClick={() => {
+                        setSelectedClass(c)
+                        setSearchQuery('')
+                        setIsDropdownOpen(false)
+                      }}
+                      className={`px-4 py-3 hover:bg-violet-primary/20 cursor-pointer text-text-primary transition-colors border-b border-slate-border/50 last:border-0 ${selectedClass === c ? 'bg-violet-primary/10 text-violet-primary font-semibold' : ''}`}
+                    >
+                      {c}
+                    </div>
+                  ))}
+                {classes.filter(c => c.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                  <div className="px-4 py-4 text-text-muted text-center text-sm">
+                    No classes found matching "{searchQuery}"
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           {error && <p className="text-red-busy mt-3 text-sm">{error}</p>}
         </div>
