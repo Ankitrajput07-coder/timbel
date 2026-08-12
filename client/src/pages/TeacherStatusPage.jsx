@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Users, Search, Clock, MapPin, BookOpen, AlertCircle } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import LottieLib from 'lottie-react'
 import loaderAnimation from '../assets/loder.json'
 
@@ -9,6 +10,7 @@ import TimeSelector from '../components/TimeSelector'
 import ParticleBackground from '../components/ParticleBackground'
 
 export default function TeacherStatusPage() {
+  const { selectedCampus } = useAuth()
   const [teachers, setTeachers] = useState([])
   const [selectedTeacher, setSelectedTeacher] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -37,18 +39,19 @@ export default function TeacherStatusPage() {
   useEffect(() => {
     fetchTeachers()
     syncCurrentTime()
-  }, [])
+  }, [selectedCampus])
 
   // Fetch status when selection changes
   useEffect(() => {
     if (selectedTeacher && selectedDay && selectedTime) {
       fetchTeacherStatus()
     }
-  }, [selectedTeacher, selectedDay, selectedTime])
+  }, [selectedTeacher, selectedDay, selectedTime, selectedCampus])
 
   const fetchTeachers = async () => {
     try {
-      const res = await fetch('/api/timetable/teachers')
+      const campusParam = selectedCampus?.id ? `?campus_id=${selectedCampus.id}` : '';
+      const res = await fetch(`/api/timetable/teachers${campusParam}`)
       if (!res.ok) throw new Error('Failed to fetch teachers')
       const data = await res.json()
       setTeachers(data.teachers || [])
@@ -74,7 +77,9 @@ export default function TeacherStatusPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/timetable/teachers/${encodeURIComponent(selectedTeacher)}/status?day=${selectedDay}&time=${selectedTime}`)
+      let url = `/api/timetable/teachers/${encodeURIComponent(selectedTeacher)}/status?day=${selectedDay}&time=${selectedTime}`;
+      if (selectedCampus?.id) url += `&campus_id=${selectedCampus.id}`;
+      const res = await fetch(url)
       if (!res.ok) throw new Error('Failed to fetch teacher status')
       const data = await res.json()
       setTeacherData(data)

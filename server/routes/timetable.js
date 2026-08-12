@@ -140,6 +140,7 @@ function applyOrientationOverrides(slots, addOrientationEvents = true) {
  */
 router.get('/buildings', async (req, res) => {
   try {
+    const { campus_id } = req.query;
     const db = getSupabase();
     const allBuildings = new Set();
     const pageSize = 1000;
@@ -147,10 +148,10 @@ router.get('/buildings', async (req, res) => {
     let hasMore = true;
 
     while (hasMore) {
-      const { data, error } = await db
-        .from('timetable_slots')
-        .select('building')
-        .range(from, from + pageSize - 1);
+      let query = db.from('timetable_slots').select('building');
+      if (campus_id) query = query.eq('campus_id', campus_id);
+      
+      const { data, error } = await query.range(from, from + pageSize - 1);
 
       if (error) {
         console.error('Error fetching buildings:', error);
@@ -190,7 +191,7 @@ router.get('/buildings', async (req, res) => {
  */
 router.get('/rooms', async (req, res) => {
   try {
-    const { building, day, time } = req.query;
+    const { building, day, time, campus_id } = req.query;
 
     if (!building || !day || !time) {
       return res.status(400).json({
@@ -218,6 +219,9 @@ router.get('/rooms', async (req, res) => {
         
       if (day && day !== 'ALL') {
         query = query.eq('day', day);
+      }
+      if (campus_id) {
+        query = query.eq('campus_id', campus_id);
       }
       
       const { data, error } = await query.range(from, from + pageSize - 1);
@@ -374,6 +378,7 @@ router.get('/rooms', async (req, res) => {
  */
 router.get('/classes', async (req, res) => {
   try {
+    const { campus_id } = req.query;
     const db = getSupabase();
     const classMap = {}; // { class_code: Set(sections) }
     const pageSize = 1000;
@@ -381,10 +386,10 @@ router.get('/classes', async (req, res) => {
     let hasMore = true;
 
     while (hasMore) {
-      const { data, error } = await db
-        .from('timetable_slots')
-        .select('class_code, section')
-        .range(from, from + pageSize - 1);
+      let query = db.from('timetable_slots').select('class_code, section');
+      if (campus_id) query = query.eq('campus_id', campus_id);
+      
+      const { data, error } = await query.range(from, from + pageSize - 1);
 
       if (error) {
         console.error('Error fetching classes:', error);
@@ -439,6 +444,7 @@ router.get('/classes', async (req, res) => {
 router.get('/classes/:classCode', async (req, res) => {
   try {
     const { classCode } = req.params;
+    const { campus_id } = req.query;
 
     if (!classCode) {
       return res.status(400).json({ error: 'Missing class code parameter' });
@@ -459,8 +465,11 @@ router.get('/classes/:classCode', async (req, res) => {
       let query = db
         .from('timetable_slots')
         .select('*')
-        .eq('class_code', baseClassCode)
-        .range(from, from + pageSize - 1);
+        .eq('class_code', baseClassCode);
+        
+      if (campus_id) query = query.eq('campus_id', campus_id);
+      
+      query = query.range(from, from + pageSize - 1);
 
       const { data, error } = await query;
 
@@ -519,6 +528,7 @@ router.get('/classes/:classCode', async (req, res) => {
  */
 router.get('/teachers', async (req, res) => {
   try {
+    const { campus_id } = req.query;
     const db = getSupabase();
     const teacherSet = new Set();
     const pageSize = 1000;
@@ -526,10 +536,10 @@ router.get('/teachers', async (req, res) => {
     let hasMore = true;
 
     while (hasMore) {
-      const { data, error } = await db
-        .from('timetable_slots')
-        .select('teacher')
-        .range(from, from + pageSize - 1);
+      let query = db.from('timetable_slots').select('teacher');
+      if (campus_id) query = query.eq('campus_id', campus_id);
+      
+      const { data, error } = await query.range(from, from + pageSize - 1);
 
       if (error) {
         console.error('Error fetching teachers:', error);
@@ -571,7 +581,7 @@ router.get('/teachers', async (req, res) => {
 router.get('/teachers/:name/status', async (req, res) => {
   try {
     const { name } = req.params;
-    const { day, time } = req.query;
+    const { day, time, campus_id } = req.query;
 
     if (!name || !day || !time) {
       return res.status(400).json({ error: 'Missing required parameters: name (in path), day, time (in query)' });
@@ -590,12 +600,15 @@ router.get('/teachers/:name/status', async (req, res) => {
 
     // Fetch all slots for this teacher on this day
     while (hasMore) {
-      const { data, error } = await db
+      let query = db
         .from('timetable_slots')
         .select('*')
         .ilike('teacher', name) // case-insensitive match
-        .eq('day', day)
-        .range(from, from + pageSize - 1);
+        .eq('day', day);
+        
+      if (campus_id) query = query.eq('campus_id', campus_id);
+      
+      const { data, error } = await query.range(from, from + pageSize - 1);
 
       if (error) {
         console.error('Error fetching teacher status:', error);

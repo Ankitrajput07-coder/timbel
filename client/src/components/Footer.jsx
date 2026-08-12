@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Heart } from 'lucide-react'
-import cosenLogo from '../assets/cosen_brand_logo.svg'
+import cosenLogo from '../assets/cosen_brand_logo2.svg'
 
 const footerLinks = [
   { name: 'Home', path: '/' },
@@ -18,7 +18,7 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <img src={cosenLogo} alt="Cosen Logo" className="h-8 w-auto" />
+              <img src={cosenLogo} alt="Cosen Logo" className="h-11 w-auto" />
               <span className="text-lg font-bold font-heading text-text-primary">
                 Timetable Detector
               </span>

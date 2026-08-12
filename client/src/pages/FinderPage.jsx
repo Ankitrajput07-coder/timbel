@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Search, MapPin, AlertCircle } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import LottieLib from 'lottie-react'
 import loaderAnimation from '../assets/loder.json'
 
@@ -10,6 +11,7 @@ import TimeSelector from '../components/TimeSelector'
 import RoomCard from '../components/RoomCard'
 
 export default function FinderPage() {
+  const { selectedCampus } = useAuth()
   const [buildings, setBuildings] = useState([])
   const [selectedBuilding, setSelectedBuilding] = useState('')
   
@@ -24,18 +26,19 @@ export default function FinderPage() {
   useEffect(() => {
     fetchBuildings()
     syncCurrentTime()
-  }, [])
+  }, [selectedCampus])
 
   // Refetch rooms when inputs change
   useEffect(() => {
     if (selectedBuilding && selectedDay && selectedTime) {
       fetchRooms()
     }
-  }, [selectedBuilding, selectedDay, selectedTime])
+  }, [selectedBuilding, selectedDay, selectedTime, selectedCampus])
 
   const fetchBuildings = async () => {
     try {
-      const res = await fetch('/api/timetable/buildings')
+      const campusParam = selectedCampus?.id ? `?campus_id=${selectedCampus.id}` : '';
+      const res = await fetch(`/api/timetable/buildings${campusParam}`)
       if (!res.ok) throw new Error('Failed to fetch buildings')
       const data = await res.json()
       setBuildings(data.buildings || [])
@@ -68,7 +71,9 @@ export default function FinderPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/timetable/rooms?building=${selectedBuilding}&day=${selectedDay}&time=${selectedTime}`)
+      let url = `/api/timetable/rooms?building=${selectedBuilding}&day=${selectedDay}&time=${selectedTime}`;
+      if (selectedCampus?.id) url += `&campus_id=${selectedCampus.id}`;
+      const res = await fetch(url)
       if (!res.ok) throw new Error('Failed to fetch room status')
       const data = await res.json()
       setRoomsData(data)

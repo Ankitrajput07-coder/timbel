@@ -1,6 +1,7 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import MobileBottomNav from './components/MobileBottomNav'
 import LandingPage from './pages/LandingPage'
 import FinderPage from './pages/FinderPage'
 import ClassTimetablePage from './pages/ClassTimetablePage'
@@ -16,12 +17,15 @@ import ProtectedRoute from './components/ProtectedRoute'
 import PWANotificationPrompt from './components/PWANotificationPrompt'
 
 function App() {
+  const location = useLocation()
+  const isLandingPage = location.pathname === '/'
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-darker">
       <Navbar />
-      <AIAssistantWidget />
+      {!isLandingPage && <AIAssistantWidget />}
       <PWANotificationPrompt />
-      <main className="flex-1">
+      <main className="flex-1 pb-16 md:pb-0"> {/* Padding bottom for mobile nav */}
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/finder" element={<FinderPage />} />
@@ -35,7 +39,8 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </main>
-      <Footer />
+      {isLandingPage && <Footer />}
+      <MobileBottomNav />
     </div>
   )
 }

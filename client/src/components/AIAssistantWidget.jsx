@@ -3,6 +3,7 @@ import { MessageSquare, X, Send, User, AlertTriangle, ChevronDown, CheckCircle }
 import LottieLib from 'lottie-react';
 import assistantAnimation from '../assets/assistent.json';
 import loaderAnimation from '../assets/loder.json';
+import { useAuth } from '../context/AuthContext';
 
 const Lottie = LottieLib.default || LottieLib;
 
@@ -106,8 +107,11 @@ export default function AIAssistantWidget() {
     }
   };
 
+  const { user } = useAuth();
+  const isUniUser = user && user.email && (user.email.endsWith('.ac.in') || user.email.endsWith('.edu') || user.email.endsWith('.edu.in'));
+
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className={`fixed right-4 md:right-6 z-50 ${isUniUser ? 'bottom-[88px] md:bottom-6' : 'bottom-6'}`}>
       {/* Floating Action Button */}
       {!isOpen && (
         <button

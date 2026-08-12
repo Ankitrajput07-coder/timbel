@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
-import { Heart, ChevronRight, Plus, X, Clock, MessageCircle, Eye, EyeOff, Star, ArrowRight, Sparkles, Search, LogOut, UserCircle } from 'lucide-react';
+import { Heart, ChevronRight, Plus, X, Clock, MessageCircle, Eye, EyeOff, Star, ArrowRight, Sparkles, Search, LogOut, UserCircle, ChevronDown } from 'lucide-react';
 import LottieLib from 'lottie-react';
 
 const DEFAULT_BANNER = 'https://res.cloudinary.com/dga14nmzn/image/upload/v1784358679/cosen_banner_wwpfb6.png';
@@ -40,7 +40,8 @@ const CONNECTION_TYPES = [
 
 const SendiYouPage = () => {
   const navigate = useNavigate();
-  const { user, profile, loading, signInWithGoogle, signOut, setProfile } = useAuth();
+  const location = useLocation();
+  const { user, profile, loading, signInWithGoogle, signOut, setProfile, selectedCampus, campuses } = useAuth();
 
   // Feed states
   const [posts, setPosts] = useState([]);
@@ -64,6 +65,7 @@ const SendiYouPage = () => {
     selected_animation: 'anim7',
     tags: [],
     max_group_size: 10,
+    target_campus_id: null,
   });
   const [tagInput, setTagInput] = useState('');
   const [creating, setCreating] = useState(false);
@@ -80,10 +82,18 @@ const SendiYouPage = () => {
 
   // ALL HOOKS BEFORE EARLY RETURNS
   useEffect(() => {
-    if (profile) {
+    if (location.state?.openModal) {
+      setShowModal(true);
+      // Clear state so it doesn't reopen on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
+  useEffect(() => {
+    if (profile && selectedCampus) {
       fetchPosts();
     }
-  }, [profile]);
+  }, [profile, selectedCampus]);
 
   useEffect(() => {
     if (user) {
@@ -129,6 +139,7 @@ const SendiYouPage = () => {
   }, [selectedUserProfile]);
 
   const fetchPosts = async () => {
+    if (!selectedCampus) return;
     setFetchingPosts(true);
     try {
       // Get current date string to filter out expired posts
@@ -136,6 +147,7 @@ const SendiYouPage = () => {
       const { data, error } = await supabase
         .from('sendiyou_posts')
         .select(`*, users ( id, name, gender, branch, custom_avatar_url, bio, email )`)
+        .or(`campus_id.eq.${selectedCampus.id},campus_id.is.null`)
         .or(`expires_at.is.null,expires_at.gte.${now}`)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -155,6 +167,7 @@ const SendiYouPage = () => {
         .from('sendiyou_posts')
         .insert([{
           creator_id: user.id,
+          campus_id: newPost.target_campus_id, // null means 'All Campuses'
           title: newPost.title || newPost.display_name,
           description: newPost.description,
           connection_type: newPost.connection_type,
@@ -523,6 +536,9 @@ const SendiYouPage = () => {
 
                     {/* Badges */}
                     <div className="flex flex-wrap gap-1.5 mb-3">
+                      <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${post.campus_id ? 'bg-violet-primary/10 text-violet-primary border-violet-primary/20' : 'bg-emerald-free/10 text-emerald-free border-emerald-free/20'}`}>
+                        {post.campus_id ? '🏫 Campus Only' : '🌍 Global'}
+                      </span>
                       <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-[rgba(28,28,28,0.04)] text-[var(--color-muted-gray)] border border-[var(--color-border-passive)]">
                         ★ Preferred: {post.preferred_gender}
                       </span>
@@ -596,6 +612,27 @@ const SendiYouPage = () => {
                       value={newPost.display_name} onChange={(e) => setNewPost({...newPost, display_name: e.target.value})}
                       placeholder="e.g. Stargazer, Campus Foodie, Night Owl..." />
                     <p className="text-[var(--color-muted-gray)] text-xs mt-1.5">This is the name shown publicly (not your real name unless you want).</p>
+                  </div>
+
+                  {/* Target Campus */}
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-charcoal)] mb-2">Target Campus <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <select
+                        value={newPost.target_campus_id || ''}
+                        onChange={(e) => setNewPost({...newPost, target_campus_id: e.target.value || null})}
+                        className="w-full lovable-input appearance-none bg-white pr-10 cursor-pointer"
+                      >
+                        <option value="">🌍 All Campuses (Global)</option>
+                        {campuses && campuses.map(campus => (
+                          <option key={campus.id} value={campus.id}>
+                            🏫 {campus.name} {campus.short_name ? `(${campus.short_name})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-gray)] pointer-events-none" />
+                    </div>
+                    <p className="text-[var(--color-muted-gray)] text-xs mt-1.5">Who should see your request? Select 'All Campuses' for maximum reach.</p>
                   </div>
 
                   {/* Gender Preference */}

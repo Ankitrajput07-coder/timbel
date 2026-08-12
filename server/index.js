@@ -8,6 +8,7 @@ const timetableRoutes = require('./routes/timetable');
 const chatRoutes = require('./routes/chat');
 const notificationsRoutes = require('./routes/notifications');
 const sendiyouRoutes = require('./routes/sendiyou');
+const campusRoutes = require('./routes/campuses');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,6 +33,7 @@ app.use('/api/timetable', timetableRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/sendiyou', sendiyouRoutes);
+app.use('/api/campuses', campusRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

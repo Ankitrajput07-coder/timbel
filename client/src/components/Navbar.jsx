@@ -1,54 +1,73 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, Building2, Bell } from 'lucide-react'
-import cosenLogo from '../assets/cosen_brand_logo.svg'
+import { Menu, X, Building2, Bell, MessageCircle, Zap } from 'lucide-react'
+import cosenLogo from '../assets/cosen_brand_logo2.svg'
 import { useNotifications } from '../context/NotificationContext'
 import { useAuth } from '../context/AuthContext'
 import { isUniversityEmail } from '../utils/authUtils'
+import CampusLoginModal from './CampusLoginModal'
 
-const baseNavLinks = [
-  { name: 'Home', path: '/' },
+const baseNavLinks = []
+
+const featureLinks = [
   { name: 'Find Rooms', path: '/finder' },
   { name: 'Class Timetables', path: '/classes' },
   { name: 'Teacher Status', path: '/teachers' },
   { name: 'SendiYou 💌', path: '/sendiyou' },
-]
-
-const sendiyouLinks = [
   { name: 'Messages 💬', path: '/messages' }
 ]
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
   const location = useLocation()
   const navigate = useNavigate()
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const { user } = useAuth()
   
   const isUniUser = user && isUniversityEmail(user.email)
-  const navLinks = isUniUser ? [...baseNavLinks, ...sendiyouLinks] : baseNavLinks
+  const navLinks = isUniUser ? [...baseNavLinks, ...featureLinks] : baseNavLinks
+
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-card rounded-none border-x-0 border-t-0">
+    <nav className={`fixed top-0 left-0 right-0 z-50 glass-card rounded-none border-x-0 border-t-0 transition-transform duration-300 ease-in-out ${(isVisible || mobileOpen || showNotifications) ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo & Brand */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <img
-              src={cosenLogo}
-              alt="Cosen Logo"
-              className="h-8 w-auto"
-            />
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold font-heading text-text-primary tracking-tight">
-                Timetable Detector
-              </span>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-primary/20 text-violet-primary border border-violet-primary/30">
-                by Cosen
-              </span>
-            </div>
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* Logo & Brand */}
+            <Link to={isUniUser ? "/sendiyou" : "/"} className="flex items-center gap-3 group">
+              <img
+                src={cosenLogo}
+                alt="Cosen Logo"
+                className="h-11 w-auto"
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold font-heading text-text-primary tracking-tight">
+                  Timetable Detector
+                </span>
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-primary/20 text-violet-primary border border-violet-primary/30">
+                  by Cosen
+                </span>
+              </div>
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2 md:gap-4">
             {/* Desktop Nav Links */}
@@ -73,6 +92,34 @@ export default function Navbar() {
                 )
               })}
             </div>
+
+            {!isUniUser && (
+              <div className="hidden md:flex items-center gap-3 ml-2">
+                <button 
+                  onClick={() => window.dispatchEvent(new Event('trigger-pwa-install'))}
+                  className="text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  Download App
+                </button>
+                <button 
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="px-4 py-2 rounded-lg bg-violet-primary text-white text-sm font-semibold hover:bg-violet-hover transition-colors"
+                >
+                  Login
+                </button>
+              </div>
+            )}
+
+            {/* Messages Icon (Mobile) */}
+            {isUniUser && (
+              <Link 
+                to="/messages"
+                className="md:hidden p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+                title="Messages"
+              >
+                <MessageCircle size={20} />
+              </Link>
+            )}
 
             {/* Notification Bell */}
             {isUniUser && (
@@ -141,41 +188,47 @@ export default function Navbar() {
             )}
 
             {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+            {!isUniUser && (
+              <button
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="md:hidden p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      {mobileOpen && (
+      {mobileOpen && !isUniUser && (
         <div className="md:hidden border-t border-slate-border/50 bg-slate-deep/95 backdrop-blur-xl">
           <div className="px-4 py-3 space-y-1">
-            {navLinks.map((link) => {
-              const isActive = location.pathname === link.path
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileOpen(false)}
-                  className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-violet-primary bg-violet-primary/10'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              )
-            })}
+            <div className="flex flex-col gap-2 pt-2 pb-1 border-t border-slate-border/30 mt-2">
+              <button 
+                onClick={() => {
+                  setMobileOpen(false);
+                  window.dispatchEvent(new Event('trigger-pwa-install'));
+                }}
+                className="block w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+              >
+                Download App
+              </button>
+              <button 
+                onClick={() => {
+                  setMobileOpen(false);
+                  setIsLoginModalOpen(true);
+                }}
+                className="block w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium bg-violet-primary/10 text-violet-primary hover:bg-violet-primary/20 transition-colors"
+              >
+                Login
+              </button>
+            </div>
           </div>
         </div>
       )}
+      <CampusLoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </nav>
   )
 }

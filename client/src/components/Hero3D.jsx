@@ -305,7 +305,9 @@ function useTypewriter(words, typingSpeed = 100, deletingSpeed = 50, pauseDelay 
   return text;
 }
 
-export default function Hero3D() {
+export default function Hero3D({ onLoginClick, onDownloadClick }) {
+  // Mobile check for layout adjusting
+  const [isMobile, setIsMobile] = useState(false);
   const mouseRef     = useRef({ x: 0, y: 0 });
   const containerRef = useRef();
   const typedText = useTypewriter(["free classes.", "teacher status.", "time table."]);
@@ -412,8 +414,8 @@ export default function Hero3D() {
 
           {/* CTA */}
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-            <Link
-              to="/finder"
+            <button
+              onClick={onDownloadClick}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -431,12 +433,11 @@ export default function Hero3D() {
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(99,91,255,0.4)'; e.currentTarget.style.background = '#5249ea'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(99,91,255,0.3)'; e.currentTarget.style.background = '#635BFF'; }}
             >
-              <Search size={18} />
-              Start Searching
-            </Link>
+              Download App
+            </button>
 
-            <a
-              href="#secondary-demo-video"
+            <button
+              onClick={onLoginClick}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -448,14 +449,14 @@ export default function Hero3D() {
                 color: "#cbd5e1",
                 fontWeight: 500,
                 fontSize: 15,
-                textDecoration: "none",
+                cursor: "pointer",
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(148,163,184,0.6)'; e.currentTarget.style.color = '#f8fafc'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(148,163,184,0.3)'; e.currentTarget.style.color = '#cbd5e1'; }}
             >
-              See how it works
-            </a>
+              Login
+            </button>
           </div>
 
         </div>

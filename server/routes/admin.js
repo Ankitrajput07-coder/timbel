@@ -57,12 +57,16 @@ router.post('/login', (req, res) => {
  */
 router.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
   try {
+    const campus_id = req.body.campus_id || req.headers['x-campus-id'];
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
+
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded. Use field name "file".' });
     }
 
     // Parse the Excel file
     const rows = parseExcel(req.file.buffer);
+    rows.forEach(row => row.campus_id = campus_id);
 
     if (rows.length === 0) {
       return res.status(400).json({ error: 'No valid rows found in the uploaded file.' });
@@ -74,7 +78,7 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
     const { error: deleteError } = await db
       .from('timetable_slots')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // delete all rows
+      .eq('campus_id', campus_id); // delete rows for this campus
 
     if (deleteError) {
       console.error('Error clearing timetable_slots:', deleteError);
@@ -108,7 +112,8 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
     await db
       .from('timetable_meta')
       .update({ is_active: false })
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .eq('campus_id', campus_id);
 
     // Create new timetable_meta record
     const metaRecord = {
@@ -116,6 +121,7 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
       uploaded_at: new Date().toISOString(),
       row_count: insertedCount,
       is_active: true,
+      campus_id,
     };
 
     const { error: metaError } = await db
@@ -155,11 +161,15 @@ function getAI() {
  */
 router.get('/issues', async (req, res) => {
   try {
+    const { campus_id } = req.query;
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
+
     const db = getSupabase();
     // Assuming table 'timetable_issues' exists.
     const { data, error } = await db
       .from('timetable_issues')
       .select('*')
+      .eq('campus_id', campus_id)
       .order('reported_at', { ascending: false });
 
     if (error) {
@@ -183,13 +193,17 @@ router.get('/issues', async (req, res) => {
  */
 router.post('/analyze-issues', async (req, res) => {
   try {
+    const { campus_id } = req.body;
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
+
     const db = getSupabase();
     
     // Fetch pending issues
     const { data: issuesData, error: issuesError } = await db
       .from('timetable_issues')
       .select('*')
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .eq('campus_id', campus_id);
 
     if (issuesError) {
       if (issuesError.code === '42P01') {
@@ -240,14 +254,15 @@ Write your analysis clearly so the human admin can read it and quickly apply the
  */
 router.post('/issues/resolve', async (req, res) => {
   try {
-    const { id } = req.body;
-    if (!id) return res.status(400).json({ error: 'Issue ID required' });
+    const { id, campus_id } = req.body;
+    if (!id || !campus_id) return res.status(400).json({ error: 'Issue ID and campus_id required' });
 
     const db = getSupabase();
     const { error } = await db
       .from('timetable_issues')
       .update({ status: 'resolved' })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('campus_id', campus_id);
 
     if (error) return res.status(500).json({ error: error.message });
 
@@ -265,13 +280,17 @@ router.post('/issues/resolve', async (req, res) => {
  */
 router.post('/apply-ai-changes', authMiddleware, async (req, res) => {
   try {
+    const { campus_id } = req.body;
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
+
     const db = getSupabase();
     
     // Fetch all pending issues
     const { data: issuesData, error: issuesError } = await db
       .from('timetable_issues')
       .select('*')
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .eq('campus_id', campus_id);
 
     if (issuesError) return res.status(500).json({ error: issuesError.message });
     if (!issuesData || issuesData.length === 0) return res.json({ success: true, changesApplied: 0 });
@@ -290,7 +309,8 @@ router.post('/apply-ai-changes', authMiddleware, async (req, res) => {
             .eq('room', roomToMatch)
             .eq('day', slot.day)
             .eq('start_time', slot.start_time)
-            .eq('end_time', slot.end_time);
+            .eq('end_time', slot.end_time)
+            .eq('campus_id', campus_id);
             
           if (!delError) changesApplied++;
         }
@@ -316,11 +336,15 @@ router.post('/apply-ai-changes', authMiddleware, async (req, res) => {
  */
 router.delete('/issues/clear-resolved', async (req, res) => {
   try {
+    const { campus_id } = req.query;
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
+
     const db = getSupabase();
     const { error } = await db
       .from('timetable_issues')
       .delete()
-      .eq('status', 'resolved');
+      .eq('status', 'resolved')
+      .eq('campus_id', campus_id);
 
     if (error) return res.status(500).json({ error: error.message });
 
@@ -338,6 +362,9 @@ router.delete('/issues/clear-resolved', async (req, res) => {
  */
 router.get('/slot-metadata', authMiddleware, async (req, res) => {
   try {
+    const { campus_id } = req.query;
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
+
     const db = getSupabase();
     const pageSize = 1000;
 
@@ -354,6 +381,7 @@ router.get('/slot-metadata', authMiddleware, async (req, res) => {
       const { data, error } = await db
         .from('timetable_slots')
         .select('subject, teacher, building, session_type, class_code')
+        .eq('campus_id', campus_id)
         .range(from, from + pageSize - 1);
 
       if (error) return res.status(500).json({ error: error.message });
@@ -394,8 +422,10 @@ router.post('/add-slot', authMiddleware, async (req, res) => {
     const {
       building, room, subject, teacher, day,
       start_time, end_time, session_type,
-      class_code, section, program, year
+      class_code, section, program, year, campus_id
     } = req.body;
+
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
 
     // Validate required fields
     const required = { building, room, subject, teacher, day, start_time, end_time };
@@ -415,7 +445,8 @@ router.post('/add-slot', authMiddleware, async (req, res) => {
       .eq('room', room.trim().toUpperCase())
       .eq('day', day.trim().toUpperCase())
       .eq('start_time', start_time.trim())
-      .eq('section', (section || '').trim().toUpperCase());
+      .eq('section', (section || '').trim().toUpperCase())
+      .eq('campus_id', campus_id);
 
     if (checkError) return res.status(500).json({ error: checkError.message });
 
@@ -438,6 +469,7 @@ router.post('/add-slot', authMiddleware, async (req, res) => {
       section: (section || '').trim().toUpperCase(),
       program: (program || '').trim().toUpperCase(),
       year: year ? String(year).trim() : '',
+      campus_id,
     };
 
     const { data, error: insertError } = await db
@@ -460,10 +492,12 @@ router.post('/add-slot', authMiddleware, async (req, res) => {
  */
 router.get('/search-slots', authMiddleware, async (req, res) => {
   try {
-    const { building, room, day } = req.query;
+    const { building, room, day, campus_id } = req.query;
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
+    
     const db = getSupabase();
 
-    let query = db.from('timetable_slots').select('*');
+    let query = db.from('timetable_slots').select('*').eq('campus_id', campus_id);
 
     if (building) query = query.eq('building', building.trim().toUpperCase());
     if (room) query = query.eq('room', room.trim().toUpperCase());
@@ -487,13 +521,16 @@ router.get('/search-slots', authMiddleware, async (req, res) => {
 router.delete('/slots/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
+    const { campus_id } = req.query;
     if (!id) return res.status(400).json({ error: 'Slot ID is required' });
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
 
     const db = getSupabase();
     const { error } = await db
       .from('timetable_slots')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('campus_id', campus_id);
 
     if (error) return res.status(500).json({ error: error.message });
 
@@ -514,6 +551,9 @@ router.put('/slots/:id', authMiddleware, async (req, res) => {
     if (!id) return res.status(400).json({ error: 'Slot ID is required' });
 
     const updateData = req.body;
+    const { campus_id } = updateData;
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
+
     if (!updateData || Object.keys(updateData).length === 0) {
       return res.status(400).json({ error: 'Update data is required' });
     }
@@ -523,6 +563,7 @@ router.put('/slots/:id', authMiddleware, async (req, res) => {
       .from('timetable_slots')
       .update(updateData)
       .eq('id', id)
+      .eq('campus_id', campus_id)
       .select();
 
     if (error) return res.status(500).json({ error: error.message });
@@ -542,16 +583,18 @@ router.put('/slots/:id', authMiddleware, async (req, res) => {
 router.delete('/class-timetable/:classCode', authMiddleware, async (req, res) => {
   try {
     const { classCode } = req.params;
-    const { section } = req.query;
+    const { section, campus_id } = req.query;
 
     if (!classCode) return res.status(400).json({ error: 'Class code is required' });
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
 
     const db = getSupabase();
 
     let query = db
       .from('timetable_slots')
       .delete()
-      .eq('class_code', classCode.trim().toUpperCase());
+      .eq('class_code', classCode.trim().toUpperCase())
+      .eq('campus_id', campus_id);
 
     if (section && section.trim()) {
       query = query.eq('section', section.trim().toUpperCase());
@@ -575,14 +618,16 @@ router.delete('/class-timetable/:classCode', authMiddleware, async (req, res) =>
 router.get('/class-slot-count/:classCode', authMiddleware, async (req, res) => {
   try {
     const { classCode } = req.params;
-    const { section } = req.query;
+    const { section, campus_id } = req.query;
+    if (!campus_id) return res.status(400).json({ error: 'campus_id is required' });
 
     const db = getSupabase();
 
     let query = db
       .from('timetable_slots')
       .select('id', { count: 'exact', head: true })
-      .eq('class_code', classCode.trim().toUpperCase());
+      .eq('class_code', classCode.trim().toUpperCase())
+      .eq('campus_id', campus_id);
 
     if (section && section.trim()) {
       query = query.eq('section', section.trim().toUpperCase());

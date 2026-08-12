@@ -54,7 +54,8 @@ router.post('/subscribe', async (req, res) => {
         .insert({
           endpoint: subscription.endpoint,
           keys_p256dh: subscription.keys.p256dh,
-          keys_auth: subscription.keys.auth
+          keys_auth: subscription.keys.auth,
+          campus_id: subscription.campus_id || null
         });
 
       if (error) {
@@ -75,17 +76,19 @@ router.post('/subscribe', async (req, res) => {
  * Admin endpoint to send a notification to all subscribers
  */
 router.post('/broadcast', authenticateAdmin, async (req, res) => {
-  const { title, body } = req.body;
+  const { title, body, campus_id } = req.body;
 
   if (!title || !body) {
     return res.status(400).json({ error: 'Title and body are required' });
   }
 
   try {
-    // Fetch all subscriptions
-    const { data: subs, error } = await supabase
-      .from('push_subscriptions')
-      .select('*');
+    // Fetch subscriptions
+    let query = supabase.from('push_subscriptions').select('*');
+    if (campus_id) {
+      query = query.eq('campus_id', campus_id);
+    }
+    const { data: subs, error } = await query;
 
     if (error) {
       return res.status(500).json({ error: 'Failed to fetch subscriptions' });
@@ -119,7 +122,8 @@ router.post('/broadcast', authenticateAdmin, async (req, res) => {
 
     await Promise.all(promises);
 
-    res.status(200).json({ success: true, message: `Broadcasted to ${subs.length} devices` });
+    const msg = campus_id ? `Broadcasted to ${subs.length} devices in campus ${campus_id}` : `Broadcasted to ${subs.length} devices`;
+    res.status(200).json({ success: true, message: msg });
   } catch (err) {
     console.error('Broadcast error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -131,10 +135,13 @@ router.post('/broadcast', authenticateAdmin, async (req, res) => {
  * Admin endpoint to get total number of push subscriptions
  */
 router.get('/count', authenticateAdmin, async (req, res) => {
+  const { campus_id } = req.query;
   try {
-    const { count, error } = await supabase
-      .from('push_subscriptions')
-      .select('*', { count: 'exact', head: true });
+    let query = supabase.from('push_subscriptions').select('*', { count: 'exact', head: true });
+    if (campus_id) {
+      query = query.eq('campus_id', campus_id);
+    }
+    const { count, error } = await query;
 
     if (error) {
       return res.status(500).json({ error: 'Failed to fetch subscription count' });

@@ -19,6 +19,23 @@ export default function AdminPage() {
   const [uploadMessage, setUploadMessage] = useState('')
   const fileInputRef = useRef(null)
 
+  const [campuses, setCampuses] = useState([])
+  const [selectedCampus, setSelectedCampus] = useState(sessionStorage.getItem('adminCampusId') || '')
+  
+  useEffect(() => {
+    fetch('/api/campuses')
+      .then(r => r.json())
+      .then(data => setCampuses(data.campuses || []))
+      .catch(console.error)
+  }, [])
+  
+  const handleCampusChange = (e) => {
+    const val = e.target.value
+    setSelectedCampus(val)
+    if(val) sessionStorage.setItem('adminCampusId', val)
+    else sessionStorage.removeItem('adminCampusId')
+  }
+
   // AI Resolve Queries State
   const [activeTab, setActiveTab] = useState('upload') // 'upload' | 'class-timetables' | 'queries'
   const [issues, setIssues] = useState([])
@@ -87,14 +104,15 @@ export default function AdminPage() {
   const [subCount, setSubCount] = useState(0)
 
   useEffect(() => {
-    if (token && activeTab === 'queries') fetchIssues()
-    if (token && (activeTab === 'class-timetables' || activeTab === 'manage-slots') && metadata.subjects.length === 0) fetchMetadata()
-    if (token && activeTab === 'notifications') fetchSubCount()
-  }, [token, activeTab])
+    if (token && selectedCampus && activeTab === 'queries') fetchIssues()
+    if (token && selectedCampus && (activeTab === 'class-timetables' || activeTab === 'manage-slots') && metadata.subjects.length === 0) fetchMetadata()
+    if (token && selectedCampus && activeTab === 'notifications') fetchSubCount()
+  }, [token, activeTab, selectedCampus])
 
   const fetchSubCount = async () => {
+    if (!selectedCampus) return;
     try {
-      const res = await fetch('/api/notifications/count', {
+      const res = await fetch(`/api/notifications/count?campus_id=${selectedCampus}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await res.json()
@@ -103,9 +121,10 @@ export default function AdminPage() {
   }
 
   const fetchMetadata = async () => {
+    if (!selectedCampus) return;
     setMetaLoading(true)
     try {
-      const res = await fetch('/api/admin/slot-metadata', {
+      const res = await fetch(`/api/admin/slot-metadata?campus_id=${selectedCampus}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await res.json()
@@ -115,10 +134,10 @@ export default function AdminPage() {
   }
 
   const fetchClassSchedule = async (classCode) => {
-    if (!classCode) { setScheduleData(null); return; }
+    if (!classCode || !selectedCampus) { setScheduleData(null); return; }
     setLoadingSchedule(true)
     try {
-      const res = await fetch('/api/timetable/classes/' + encodeURIComponent(classCode))
+      const res = await fetch(`/api/timetable/classes/${encodeURIComponent(classCode)}?campus_id=${selectedCampus}`)
       const data = await res.json()
       if (res.ok && data.schedule) {
         const grouped = {}
@@ -148,6 +167,7 @@ export default function AdminPage() {
     setDeleteConfirmId(null)
     try {
       const params = new URLSearchParams()
+      params.append('campus_id', selectedCampus)
       if (manageSearch.building) params.append('building', manageSearch.building)
       if (manageSearch.room) params.append('room', manageSearch.room)
       if (manageSearch.day) params.append('day', manageSearch.day)
@@ -170,7 +190,7 @@ export default function AdminPage() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(editSlotData)
+        body: JSON.stringify({ ...editSlotData, campus_id: selectedCampus })
       })
       const data = await res.json()
       if (res.ok) {
@@ -196,7 +216,7 @@ export default function AdminPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify(slotForm)
+        body: JSON.stringify({ ...slotForm, campus_id: selectedCampus })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save slot')
@@ -215,7 +235,7 @@ export default function AdminPage() {
   const handleDeleteSlot = async (id) => {
     setActionLoading(true)
     try {
-      const res = await fetch('/api/admin/slots/' + id, {
+      const res = await fetch(`/api/admin/slots/${id}?campus_id=${selectedCampus}`, {
         method: 'DELETE',
         headers: { 'Authorization': 'Bearer ' + token }
       })
@@ -233,7 +253,7 @@ export default function AdminPage() {
   const handleDeleteClass = async () => {
     setActionLoading(true)
     try {
-      const res = await fetch('/api/admin/class-timetable/' + encodeURIComponent(selectedClass), {
+      const res = await fetch(`/api/admin/class-timetable/${encodeURIComponent(selectedClass)}?campus_id=${selectedCampus}`, {
         method: 'DELETE',
         headers: { 'Authorization': 'Bearer ' + token }
       })
@@ -253,7 +273,7 @@ export default function AdminPage() {
   const fetchIssues = async () => {
     setLoadingIssues(true)
     try {
-      const res = await fetch('/api/admin/issues', {
+      const res = await fetch(`/api/admin/issues?campus_id=${selectedCampus}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await res.json()
@@ -271,7 +291,8 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/admin/analyze-issues', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ campus_id: selectedCampus })
       })
       const data = await res.json()
       if (res.ok) setAiAnalysis(data.analysis)
@@ -288,7 +309,8 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/admin/apply-ai-changes', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ campus_id: selectedCampus })
       })
       const data = await res.json()
       if (res.ok) {
@@ -312,7 +334,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/issues/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ id })
+        body: JSON.stringify({ id, campus_id: selectedCampus })
       })
       if (res.ok) {
         fetchIssues()
@@ -328,7 +350,7 @@ export default function AdminPage() {
     if (!window.confirm('Are you sure you want to clear all resolved queries? This action cannot be undone.')) return;
     setClearing(true);
     try {
-      const res = await fetch('/api/admin/issues/clear-resolved', {
+      const res = await fetch(`/api/admin/issues/clear-resolved?campus_id=${selectedCampus}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -383,6 +405,7 @@ export default function AdminPage() {
 
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('campus_id', selectedCampus)
 
     try {
       const res = await fetch('/api/admin/upload', {
@@ -479,6 +502,29 @@ export default function AdminPage() {
           </button>
         </div>
 
+        <div className="mb-6 p-6 glass-card border border-emerald-free/20 relative z-50">
+          <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Select Campus</label>
+          <div className="relative">
+            <select
+              value={selectedCampus}
+              onChange={handleCampusChange}
+              className="w-full appearance-none px-4 py-3 rounded-xl bg-slate-deeper border border-slate-border text-text-primary focus:outline-none focus:border-emerald-free focus:ring-1 focus:ring-emerald-free transition-colors"
+            >
+              <option value="" className="bg-slate-deeper text-white">-- Choose a Campus --</option>
+              {campuses.map(c => (
+                <option key={c.id} value={c.id} className="bg-slate-deeper text-white">{c.name}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+          </div>
+        </div>
+
+        {!selectedCampus ? (
+          <div className="glass-card p-12 text-center text-text-muted">
+            Please select a campus to view and manage timetables.
+          </div>
+        ) : (
+          <>
         <div className="flex border-b border-slate-border mb-6 overflow-x-auto">
           <button
             className={`px-5 py-3 font-semibold text-sm transition-colors whitespace-nowrap ${activeTab === 'upload' ? 'border-b-2 border-violet-primary text-violet-primary' : 'text-text-muted hover:text-text-primary'}`}
@@ -1353,7 +1399,7 @@ export default function AdminPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                   },
-                  body: JSON.stringify({ title, body })
+                  body: JSON.stringify({ title, body, campus_id: selectedCampus })
                 });
                 const data = await res.json();
                 if (res.ok) {
@@ -1385,6 +1431,8 @@ export default function AdminPage() {
               </div>
             </form>
           </div>
+        )}
+        </>
         )}
 
       </div>

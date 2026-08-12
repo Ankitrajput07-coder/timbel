@@ -5,3 +5,9 @@ export const isUniversityEmail = (email) => {
          lowerEmail.endsWith('.edu') || 
          lowerEmail.endsWith('.edu.in');
 };
+
+export const matchesCampusDomain = (email, emailDomains) => {
+  if (!email || !emailDomains || !Array.isArray(emailDomains)) return false;
+  const lowerEmail = email.toLowerCase();
+  return emailDomains.some(domain => lowerEmail.endsWith('@' + domain.toLowerCase()));
+};

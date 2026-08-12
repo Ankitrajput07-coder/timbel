@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   Building2,
@@ -12,11 +12,14 @@ import {
   AlertCircle,
   Users,
 } from 'lucide-react'
-import cosenLogo from '../assets/cosen_brand_logo.svg'
+import cosenLogo from '../assets/cosen_brand_logo2.svg'
 import Hero3D from '../components/Hero3D'
-import ParticleBackground from '../components/ParticleBackground'
+import PixelBlast from '../components/PixelBlast'
 import ContributorsMarquee from '../components/ContributorsMarquee'
 import PushNotificationManager from '../components/PushNotificationManager'
+import CampusLoginModal from '../components/CampusLoginModal'
+import { useAuth } from '../context/AuthContext'
+import { isUniversityEmail } from '../utils/authUtils'
 
 /* ─── Mouse-tracking 3D tilt on the hero mockup ─── */
 function useTilt(strength = 12) {
@@ -524,11 +527,22 @@ function ScrollSteps() {
 }
 
 export default function LandingPage() {
+  const navigate = useNavigate()
+  const { user, loading } = useAuth()
+
+  useEffect(() => {
+    if (!loading && user && isUniversityEmail(user.email)) {
+      navigate('/sendiyou', { replace: true })
+    }
+  }, [user, loading, navigate])
 
   const { ref, tilt } = useTilt(10)
 
   // Start with a resting tilt that looks natural
   const [ready, setReady] = useState(false)
+  
+  // Login modal state
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState(null)
@@ -570,6 +584,12 @@ export default function LandingPage() {
     }
   }
 
+  useEffect(() => {
+    const handleTrigger = () => handleInstallClick()
+    window.addEventListener('trigger-pwa-install', handleTrigger)
+    return () => window.removeEventListener('trigger-pwa-install', handleTrigger)
+  }, [deferredPrompt])
+
   const activeTilt = ready ? tilt : { x: 6, y: -10 }
 
   return (
@@ -594,9 +614,31 @@ export default function LandingPage() {
         </button>
       )}
 
-      <ParticleBackground />
+      {/* ── PixelBlast WebGL Dithered Background ── */}
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0, pointerEvents: 'none', background: '#060C20' }}>
+        <PixelBlast
+          variant="square"
+          pixelSize={4}
+          color="#635BFF"
+          patternScale={2}
+          patternDensity={1}
+          pixelSizeJitter={0}
+          enableRipples
+          rippleSpeed={0.4}
+          rippleThickness={0.12}
+          rippleIntensityScale={1.5}
+          liquid={false}
+          liquidStrength={0.12}
+          liquidRadius={1.2}
+          liquidWobbleSpeed={5}
+          speed={0.5}
+          edgeFade={0.25}
+          transparent
+          style={{ pointerEvents: 'auto' }}
+        />
+      </div>
       
-      <Hero3D />
+      <Hero3D onLoginClick={() => setIsLoginModalOpen(true)} onDownloadClick={handleInstallClick} />
 
       {/* ── 🎬 Demo Video Showcase ── */}
       <section style={{ padding: '40px 24px 40px', position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'center' }}>
@@ -759,7 +801,7 @@ export default function LandingPage() {
             <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, background: 'radial-gradient(circle, rgba(99,91,255,0.12), transparent 65%)', pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', bottom: -60, left: -60, width: 180, height: 180, background: 'radial-gradient(circle, rgba(16,185,129,0.09), transparent 65%)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <img src={cosenLogo} alt="Cosen" style={{ height: 52, width: 'auto', margin: '0 auto 22px', opacity: 0.9, display: 'block' }} />
+              <img src={cosenLogo} alt="Cosen" style={{ height: 72, width: 'auto', margin: '0 auto 22px', opacity: 0.9, display: 'block' }} />
               <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', fontWeight: 800, color: '#F8FAFC', fontFamily: 'Plus Jakarta Sans, sans-serif', marginBottom: 14 }}>
                 Powered by <span style={{ background: 'linear-gradient(125deg, #635BFF, #10B981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Cosen</span>
               </h2>
@@ -800,6 +842,8 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <CampusLoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+
       {/* ═══════════════════════════════ CONTRIBUTORS ═══════════════════════════════ */}
       <ContributorsMarquee />
 
@@ -807,21 +851,20 @@ export default function LandingPage() {
       <section style={{ padding: '100px 24px', borderTop: '1px solid rgba(51,65,85,0.3)', textAlign: 'center', position: 'relative' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 60%, rgba(99,91,255,0.1) 0%, transparent 60%)', pointerEvents: 'none' }} />
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#635BFF', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 20 }}>No sign-up. No login.</p>
           <h2 style={{ fontSize: 'clamp(2rem, 5.5vw, 3.8rem)', fontWeight: 900, color: '#F8FAFC', fontFamily: 'Plus Jakarta Sans, sans-serif', lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 16 }}>
             Ready to claim<br />
             <span style={{ background: 'linear-gradient(125deg, #635BFF, #10B981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>your free room?</span>
           </h2>
-          <p style={{ fontSize: 16, color: '#64748B', marginBottom: 40 }}>1,797 class slots tracked. Open right now.</p>
+          <p style={{ fontSize: 16, color: '#64748B', marginBottom: 40 }}>Login with your university email to get started.</p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
-            <Link
-              to="/finder"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 40px', background: '#635BFF', color: '#fff', borderRadius: 999, fontWeight: 600, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 30px rgba(99,91,255,0.25)', transition: 'all 0.25s ease', letterSpacing: '-0.02em' }}
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 40px', background: '#635BFF', color: '#fff', borderRadius: 999, fontWeight: 600, fontSize: 16, textDecoration: 'none', border: 'none', cursor: 'pointer', boxShadow: '0 8px 30px rgba(99,91,255,0.25)', transition: 'all 0.25s ease', letterSpacing: '-0.02em' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(99,91,255,0.4)'; e.currentTarget.style.background = '#7C75FF' }}
               onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 8px 30px rgba(99,91,255,0.25)'; e.currentTarget.style.background = '#635BFF' }}
             >
               <Zap size={18} /> Find a Free Room Now <ArrowRight size={18} />
-            </Link>
+            </button>
           </div>
           
           <div style={{ marginTop: 24 }}>

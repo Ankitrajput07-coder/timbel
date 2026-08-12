@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Calendar, Clock, User, MapPin, Search } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import QuantumBackground from '../components/QuantumBackground'
 import LottieLib from 'lottie-react'
 import loaderAnimation from '../assets/loder.json'
@@ -9,6 +10,7 @@ const Lottie = LottieLib.default || LottieLib;
 const DAYS_OF_WEEK = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
 export default function ClassTimetablePage() {
+  const { selectedCampus } = useAuth()
   const [classes, setClasses] = useState([])
   const [selectedClass, setSelectedClass] = useState('')
   const [scheduleData, setScheduleData] = useState(null)
@@ -45,7 +47,8 @@ export default function ClassTimetablePage() {
   }, [showVideo])
 
   useEffect(() => {
-    fetch('/api/timetable/classes')
+    const campusParam = selectedCampus?.id ? `?campus_id=${selectedCampus.id}` : '';
+    fetch(`/api/timetable/classes${campusParam}`)
       .then(res => res.json())
       .then(data => {
         if (data.classes) setClasses(data.classes)
@@ -56,7 +59,7 @@ export default function ClassTimetablePage() {
         setError('Failed to load classes')
         setLoadingClasses(false)
       })
-  }, [])
+  }, [selectedCampus])
 
   useEffect(() => {
     if (!selectedClass) {
@@ -65,7 +68,9 @@ export default function ClassTimetablePage() {
     }
 
     setLoadingSchedule(true)
-    fetch(`/api/timetable/classes/${encodeURIComponent(selectedClass)}`)
+    let url = `/api/timetable/classes/${encodeURIComponent(selectedClass)}`;
+    if (selectedCampus?.id) url += `?campus_id=${selectedCampus.id}`;
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         if (data.schedule) {
@@ -88,7 +93,7 @@ export default function ClassTimetablePage() {
         setError('Failed to load schedule')
         setLoadingSchedule(false)
       })
-  }, [selectedClass])
+  }, [selectedClass, selectedCampus])
 
   return (
     <div className="min-h-screen pb-20 relative overflow-x-hidden bg-transparent">

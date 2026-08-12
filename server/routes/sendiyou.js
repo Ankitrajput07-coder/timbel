@@ -451,4 +451,44 @@ router.post('/kick-member', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────
+// GET /api/sendiyou/posts
+// ─────────────────────────────────────────────────────────
+router.get('/posts', async (req, res) => {
+  try {
+    const { campus_id } = req.query;
+    const db = getSupabase();
+    let query = db.from('sendiyou_posts').select('*');
+    if (campus_id) {
+      query = query.eq('campus_id', campus_id);
+    }
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────
+// POST /api/sendiyou/posts
+// ─────────────────────────────────────────────────────────
+router.post('/posts', async (req, res) => {
+  try {
+    const db = getSupabase();
+    const { campus_id, ...postData } = req.body;
+    
+    const insertData = { ...postData };
+    if (campus_id) {
+      insertData.campus_id = campus_id;
+    }
+    
+    const { data, error } = await db.from('sendiyou_posts').insert([insertData]).select();
+    if (error) throw error;
+    res.json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
