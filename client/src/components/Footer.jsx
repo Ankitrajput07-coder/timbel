@@ -1,15 +1,31 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Heart } from 'lucide-react'
 import cosenLogo from '../assets/cosen_brand_logo2.svg'
+import { useAuth } from '../context/AuthContext'
+import { isUniversityEmail } from '../utils/authUtils'
+import CampusLoginModal from './CampusLoginModal'
 
 const footerLinks = [
   { name: 'Home', path: '/' },
-  { name: 'Find Rooms', path: '/finder' },
-  { name: 'Class Timetables', path: '/classes' },
-  { name: 'Teacher Status', path: '/teachers' },
+  { name: 'Find Rooms', path: '/finder', protected: true },
+  { name: 'Class Timetables', path: '/classes', protected: true },
+  { name: 'Teacher Status', path: '/teachers', protected: true },
 ]
 
 export default function Footer() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const isUniUser = user && isUniversityEmail(user.email)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+
+  const handleLinkClick = (e, link) => {
+    if (link.protected && !isUniUser) {
+      e.preventDefault()
+      setIsLoginModalOpen(true)
+    }
+  }
+
   return (
     <footer className="relative z-10 border-t border-slate-border/30 bg-slate-deep/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,9 +54,16 @@ export default function Footer() {
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className="text-sm text-text-muted hover:text-violet-primary transition-colors duration-200"
+                    onClick={(e) => handleLinkClick(e, link)}
+                    className="text-sm text-text-muted hover:text-violet-primary transition-colors duration-200 inline-flex items-center gap-2"
                   >
                     {link.name}
+                    {link.protected && !isUniUser && (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-50">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                    )}
                   </Link>
                 </li>
               ))}
@@ -82,6 +105,9 @@ export default function Footer() {
           </p>
         </div>
       </div>
+
+      {/* Login Modal */}
+      <CampusLoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </footer>
   )
 }

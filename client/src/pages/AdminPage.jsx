@@ -510,9 +510,9 @@ export default function AdminPage() {
               onChange={handleCampusChange}
               className="w-full appearance-none px-4 py-3 rounded-xl bg-slate-deeper border border-slate-border text-text-primary focus:outline-none focus:border-emerald-free focus:ring-1 focus:ring-emerald-free transition-colors"
             >
-              <option value="" className="bg-slate-deeper text-white">-- Choose a Campus --</option>
+              <option value="" style={{ backgroundColor: '#0F172A', color: '#F8FAFC' }}>-- Choose a Campus --</option>
               {campuses.map(c => (
-                <option key={c.id} value={c.id} className="bg-slate-deeper text-white">{c.name}</option>
+                <option key={c.id} value={c.id} style={{ backgroundColor: '#0F172A', color: '#F8FAFC' }}>{c.name}</option>
               ))}
             </select>
             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />

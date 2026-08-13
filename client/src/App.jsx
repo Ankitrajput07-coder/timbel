@@ -28,10 +28,10 @@ function App() {
       <main className="flex-1 pb-16 md:pb-0"> {/* Padding bottom for mobile nav */}
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/finder" element={<FinderPage />} />
-          <Route path="/classes" element={<ClassTimetablePage />} />
-          <Route path="/teachers" element={<TeacherStatusPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/finder" element={<ProtectedRoute><FinderPage /></ProtectedRoute>} />
+          <Route path="/classes" element={<ProtectedRoute><ClassTimetablePage /></ProtectedRoute>} />
+          <Route path="/teachers" element={<ProtectedRoute><TeacherStatusPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/sendiyou" element={<ProtectedRoute><SendiYouPage /></ProtectedRoute>} />
           <Route path="/sendiyou/post/:postId" element={<ProtectedRoute><PostDetailPage /></ProtectedRoute>} />
           <Route path="/chat/:chatId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />

@@ -346,12 +346,20 @@ router.get('/rooms', async (req, res) => {
       else if (status === 'busy-soon') busySoonCount++;
       else if (status === 'in-use') inUseCount++;
 
+      // Determine if this room is used as a lab
+      const isLab = sortedSlots.some(s => {
+        const type = (s.session_type || '').toLowerCase();
+        const subj = (s.subject || '').toLowerCase();
+        return type === 'lab' || subj.includes('(lab)');
+      });
+
       rooms.push({
         name: roomName,
         status,
         currentClass,
         nextClass,
         fullSchedule,
+        isLab,
       });
     }
 

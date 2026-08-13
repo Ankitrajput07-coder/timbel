@@ -70,7 +70,13 @@ export default function ScheduleAccordion({ schedule, queryTimeInMinutes, roomNa
                   </div>
                   <div className="flex items-center gap-1.5">
                     <BookOpen size={12} className="shrink-0" />
-                    <span className="truncate">{slot.session_type || 'Lecture'}</span>
+                    {(slot.session_type || '').toLowerCase() === 'lab' ? (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 leading-none">
+                        🧪 Lab
+                      </span>
+                    ) : (
+                      <span className="truncate">{slot.session_type || 'Lecture'}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5 sm:col-span-2">
                     <Users size={12} className="shrink-0" />

@@ -15,7 +15,7 @@ export default defineConfig({
       injectManifest: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
       },
-      includeAssets: ['favicon.png', 'favicon.svg'],
+      includeAssets: ['favicon.png', 'favicon.svg', 'cosen_brand_logo2.svg', 'pwa-icon-192.png', 'pwa-icon-512.png'],
       devOptions: {
         enabled: true,
         type: 'module',
@@ -29,15 +29,26 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'cosen_brand_logo.svg',
+            src: 'pwa-icon-192.png',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: 'cosen_brand_logo.svg',
+            src: 'pwa-icon-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: 'cosen_brand_logo2.svg',
+            sizes: 'any',
+            type: 'image/svg+xml'
           }
         ]
       }

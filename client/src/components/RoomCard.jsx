@@ -3,7 +3,7 @@ import StatusBadge from './StatusBadge'
 import ScheduleAccordion from './ScheduleAccordion'
 
 export default function RoomCard({ room, queryTimeInMinutes }) {
-  const { name, status, currentClass, nextClass, fullSchedule } = room
+  const { name, status, currentClass, nextClass, fullSchedule, isLab } = room
 
   return (
     <div className="glass-card p-5 hover-lift relative overflow-hidden group">
@@ -16,10 +16,15 @@ export default function RoomCard({ room, queryTimeInMinutes }) {
       )}
 
       <div className="flex items-start justify-between mb-6">
-        <div>
+        <div className="flex items-center gap-2.5">
           <h3 className="text-2xl font-bold font-heading text-text-primary tracking-tight">
             {name}
           </h3>
+          {isLab && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 leading-none">
+              🧪 Lab
+            </span>
+          )}
         </div>
         <StatusBadge status={status} />
       </div>
