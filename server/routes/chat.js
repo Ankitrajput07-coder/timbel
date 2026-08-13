@@ -222,7 +222,7 @@ function getBuildingName(room) {
 
 router.post('/report-slot-issue', async (req, res) => {
   try {
-    const { room, slot_time, issue_type, query_text, slot_data } = req.body;
+    const { room, slot_time, issue_type, query_text, slot_data, campus_id } = req.body;
 
     if (!room || !query_text) {
       return res.status(400).json({ error: 'Room and description are required' });
@@ -241,7 +241,8 @@ router.post('/report-slot-issue', async (req, res) => {
           room,
           slot_time,
           issue_type,
-          slot_data
+          slot_data,
+          campus_id
         }
       ]);
 

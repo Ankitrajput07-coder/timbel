@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle, X, CheckCircle } from 'lucide-react';
 import LottieLib from 'lottie-react';
 import loaderAnimation from '../assets/loder.json';
+import { useAuth } from './../context/AuthContext';
 
 const Lottie = LottieLib.default || LottieLib;
 
@@ -11,6 +12,7 @@ export default function IssueReportModal({ isOpen, onClose, slot }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+  const { selectedCampus } = useAuth();
 
   if (!isOpen || !slot) return null;
 
@@ -33,7 +35,8 @@ export default function IssueReportModal({ isOpen, onClose, slot }) {
           slot_time: `${slot.start_time} - ${slot.end_time}`,
           issue_type: issueType,
           query_text: description,
-          slot_data: slot
+          slot_data: slot,
+          campus_id: selectedCampus?.id || undefined
         })
       });
 

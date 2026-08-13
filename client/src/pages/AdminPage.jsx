@@ -37,7 +37,7 @@ export default function AdminPage() {
   }
 
   // AI Resolve Queries State
-  const [activeTab, setActiveTab] = useState('upload') // 'upload' | 'class-timetables' | 'queries'
+  const [activeTab, setActiveTab] = useState(sessionStorage.getItem('adminActiveTab') || 'upload') // 'upload' | 'class-timetables' | 'queries'
   const [issues, setIssues] = useState([])
   const [loadingIssues, setLoadingIssues] = useState(false)
   const [aiAnalysis, setAiAnalysis] = useState('')
@@ -59,7 +59,7 @@ export default function AdminPage() {
   const [metadata, setMetadata] = useState({ subjects: [], teachers: [], buildings: [], classCodes: [] })
   const [metaLoading, setMetaLoading] = useState(false)
   
-  const [selectedClass, setSelectedClass] = useState('')
+  const [selectedClass, setSelectedClass] = useState(sessionStorage.getItem('adminSelectedClass') || '')
   const [classSearch, setClassSearch] = useState('')
   const [showClassDrop, setShowClassDrop] = useState(false)
   const [scheduleData, setScheduleData] = useState(null)
@@ -108,6 +108,14 @@ export default function AdminPage() {
     if (token && selectedCampus && (activeTab === 'class-timetables' || activeTab === 'manage-slots') && metadata.subjects.length === 0) fetchMetadata()
     if (token && selectedCampus && activeTab === 'notifications') fetchSubCount()
   }, [token, activeTab, selectedCampus])
+
+  useEffect(() => {
+    sessionStorage.setItem('adminActiveTab', activeTab)
+  }, [activeTab])
+
+  useEffect(() => {
+    sessionStorage.setItem('adminSelectedClass', selectedClass)
+  }, [selectedClass])
 
   const fetchSubCount = async () => {
     if (!selectedCampus) return;

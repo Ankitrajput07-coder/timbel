@@ -22,6 +22,12 @@ export default function FinderPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  useEffect(() => {
+    if (selectedBuilding) {
+      sessionStorage.setItem('finderBuilding', selectedBuilding)
+    }
+  }, [selectedBuilding])
+
   // Initialization: Fetch buildings and set current day/time
   useEffect(() => {
     fetchBuildings()
@@ -43,9 +49,14 @@ export default function FinderPage() {
       const data = await res.json()
       setBuildings(data.buildings || [])
       
-      // Auto-select first building if available
+      // Restore from session or auto-select first building
       if (data.buildings && data.buildings.length > 0) {
-        setSelectedBuilding(data.buildings[0])
+        const savedBuilding = sessionStorage.getItem('finderBuilding')
+        if (savedBuilding && data.buildings.includes(savedBuilding)) {
+          setSelectedBuilding(savedBuilding)
+        } else {
+          setSelectedBuilding(data.buildings[0])
+        }
       }
     } catch (err) {
       console.error(err)
