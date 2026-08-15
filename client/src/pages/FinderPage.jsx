@@ -209,31 +209,25 @@ export default function FinderPage() {
                   </div>
                 )}
 
-                {/* Main Rooms Grid */}
+                {/* Results Grid */}
                 {!loading && !error && roomsData && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center justify-between border-b border-slate-border/50 pb-4">
-                      <h2 className="text-xl font-semibold text-text-primary">
-                        <span className="text-emerald-free">{roomsData.free_rooms.length}</span> free rooms available
-                      </h2>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {roomsData.free_rooms.map(room => (
-                        <RoomCard
-                          key={room.room_name}
-                          room={room}
-                          selectedTime={selectedTime}
-                          queryTimeInMinutes={queryTimeInMinutes()}
+                  roomsData.rooms.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      {roomsData.rooms.map((room) => (
+                        <RoomCard 
+                          key={room.name} 
+                          room={room} 
+                          queryTimeInMinutes={queryTimeInMinutes()} 
                         />
                       ))}
-                      {roomsData.free_rooms.length === 0 && (
-                        <div className="col-span-full py-12 text-center glass-card border border-slate-border">
-                          <p className="text-text-muted">No free rooms found at this time.</p>
-                        </div>
-                      )}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="text-center py-20 glass-card animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <Search className="w-12 h-12 text-text-muted mx-auto mb-4 opacity-50" />
+                      <h3 className="text-xl font-semibold text-text-primary mb-2">No Rooms Found</h3>
+                      <p className="text-text-muted">There are no schedule entries for Building {selectedBuilding} on {selectedDay}.</p>
+                    </div>
+                  )
                 )}
               </>
             )}
