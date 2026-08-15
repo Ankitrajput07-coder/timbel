@@ -12,6 +12,7 @@ import ParticleBackground from '../components/ParticleBackground'
 export default function TeacherStatusPage() {
   const { selectedCampus } = useAuth()
   const [teachers, setTeachers] = useState([])
+  const [teachersLoading, setTeachersLoading] = useState(true)
   const [selectedTeacher, setSelectedTeacher] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -49,6 +50,7 @@ export default function TeacherStatusPage() {
   }, [selectedTeacher, selectedDay, selectedTime, selectedCampus])
 
   const fetchTeachers = async () => {
+    setTeachersLoading(true)
     try {
       const campusParam = selectedCampus?.id ? `?campus_id=${selectedCampus.id}` : '';
       const res = await fetch(`/api/timetable/teachers${campusParam}`)
@@ -58,6 +60,8 @@ export default function TeacherStatusPage() {
     } catch (err) {
       console.error(err)
       setError('Could not load teachers list. Please check backend connection.')
+    } finally {
+      setTeachersLoading(false)
     }
   }
 
@@ -142,10 +146,24 @@ export default function TeacherStatusPage() {
             </p>
           </div>
         </div>
-
-        {/* Controls Card */}
-        <div className="glass-card p-6 md:p-8 mb-8 relative z-30">
-          <div className="flex flex-col md:flex-row gap-8">
+        {!teachersLoading && teachers.length === 0 ? (
+          <div className="max-w-md mx-auto glass-card p-8 shadow-2xl relative z-50 border border-amber-soon/30 text-center animate-in fade-in slide-in-from-bottom-4 duration-500 mt-12 mb-20">
+            <div className="w-16 h-16 rounded-full bg-amber-soon/10 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">🚀</span>
+            </div>
+            <h2 className="text-xl font-bold font-heading text-text-primary mb-2">Campus Not Active Yet</h2>
+            <p className="text-sm text-text-muted mb-6 leading-relaxed">
+              We haven't received the teacher data for <strong className="text-text-primary">{selectedCampus?.name || 'your campus'}</strong> yet. Ask your college Admin or CR to upload the schedule!
+            </p>
+            <div className="inline-block bg-slate-800 text-xs font-semibold text-text-secondary px-4 py-2 rounded-full">
+              While you wait, check out SendiYou!
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Controls Card */}
+            <div className="glass-card p-6 md:p-8 mb-8 relative z-30">
+              <div className="flex flex-col md:flex-row gap-8">
             
             {/* Search Input */}
             <div className="flex-1">
@@ -354,7 +372,8 @@ export default function TeacherStatusPage() {
 
           </div>
         )}
-
+        </>
+      )}
       </div>
     </div>
   )

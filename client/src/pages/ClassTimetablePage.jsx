@@ -136,10 +136,24 @@ export default function ClassTimetablePage() {
         </div>
 
         {/* Dropdown Section */}
-        <div className="max-w-md mx-auto glass-card p-6 mb-12 shadow-2xl relative z-50 border border-violet-primary/20">
-          <label className="block text-sm font-semibold text-text-secondary mb-3">
-            Select Your Class
-          </label>
+        {!loadingClasses && classes.length === 0 ? (
+          <div className="max-w-md mx-auto glass-card p-8 mb-12 shadow-2xl relative z-50 border border-amber-soon/30 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="w-16 h-16 rounded-full bg-amber-soon/10 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">🚀</span>
+            </div>
+            <h2 className="text-xl font-bold font-heading text-text-primary mb-2">Campus Not Active Yet</h2>
+            <p className="text-sm text-text-muted mb-6 leading-relaxed">
+              We haven't received the timetable data for <strong className="text-text-primary">{selectedCampus?.name || 'your campus'}</strong> yet. Ask your college Admin or CR to upload the schedule!
+            </p>
+            <div className="inline-block bg-slate-800 text-xs font-semibold text-text-secondary px-4 py-2 rounded-full">
+              While you wait, check out SendiYou!
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-md mx-auto glass-card p-6 mb-12 shadow-2xl relative z-50 border border-violet-primary/20">
+            <label className="block text-sm font-semibold text-text-secondary mb-3">
+              Select Your Class
+            </label>
           <div className="relative" ref={dropdownRef}>
             <div className="relative">
               <input
@@ -192,6 +206,7 @@ export default function ClassTimetablePage() {
           </div>
           {error && <p className="text-red-busy mt-3 text-sm">{error}</p>}
         </div>
+        )}
 
         {/* Loading State */}
         {loadingSchedule && (

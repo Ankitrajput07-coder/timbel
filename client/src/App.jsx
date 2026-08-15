@@ -19,11 +19,14 @@ import PWANotificationPrompt from './components/PWANotificationPrompt'
 function App() {
   const location = useLocation()
   const isLandingPage = location.pathname === '/'
+  const isSendiYouSection = location.pathname.startsWith('/sendiyou')
+  const isAdminSection = location.pathname.startsWith('/admin')
+  const showAssistant = !isLandingPage && !isSendiYouSection && !isAdminSection
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-darker">
       <Navbar />
-      {!isLandingPage && <AIAssistantWidget />}
+      {showAssistant && <AIAssistantWidget />}
       <PWANotificationPrompt />
       <main className="flex-1 pb-16 md:pb-0"> {/* Padding bottom for mobile nav */}
         <Routes>
