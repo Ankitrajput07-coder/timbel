@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
           setSelectedCampus(campus);
         } else {
           const userDomain = authUser.email.split('@')[1] || '';
-          setAuthError(`Aapka email domain (${userDomain}) aapke selected campus (${campus.name}) se match nahi kar raha. Please apne college email se login karein.`);
+          setAuthError(`Your email domain (${userDomain}) does not match your selected campus (${campus.name}). Please sign in with your official college email.`);
           await signOut();
           localStorage.removeItem('pending_campus');
         }
