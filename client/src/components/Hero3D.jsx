@@ -406,8 +406,10 @@ export default function Hero3D({ onLoginClick, onDownloadClick }) {
             margin: "0 0 36px",
             fontSize: "clamp(1rem, 1.8vw, 1.15rem)",
             lineHeight: 1.7,
-            color: "#94a3b8",
+            color: "#f1f5f9", // Lighter color for better contrast
+            fontWeight: 500, // Slightly bolder
             maxWidth: 520,
+            textShadow: "0px 2px 4px rgba(0,0,0,0.3)" // Added subtle shadow for readability against complex backgrounds
           }}>
             Why wander the halls? Our system syncs with your live college schedule to instantly show you which classrooms are free right now, and which ones are about to fill up.
           </p>

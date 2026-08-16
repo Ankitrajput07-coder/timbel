@@ -531,7 +531,7 @@ export default function LandingPage() {
   const { user, loading } = useAuth()
 
   useEffect(() => {
-    if (!loading && user && isUniversityEmail(user.email)) {
+    if (!loading && user) {
       navigate('/sendiyou', { replace: true })
     }
   }, [user, loading, navigate])
@@ -591,6 +591,10 @@ export default function LandingPage() {
   }, [deferredPrompt])
 
   const activeTilt = ready ? tilt : { x: 6, y: -10 }
+
+  if (loading) {
+    return <div style={{ minHeight: '100vh', background: '#060C20' }} />
+  }
 
   return (
     <div style={{ overflowX: 'hidden', background: 'transparent' }}>
