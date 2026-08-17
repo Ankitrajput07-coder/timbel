@@ -69,7 +69,6 @@ export default function TeacherStatusPage() {
     const now = new Date()
     const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
     let currentDay = days[now.getDay()]
-    if (currentDay === 'SUN') currentDay = 'MON' // fallback
     setSelectedDay(currentDay)
 
     const hours = String(now.getHours()).padStart(2, '0')
@@ -249,12 +248,13 @@ export default function TeacherStatusPage() {
         {!loading && teacherData && selectedTeacher && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
-            {/* Big Status Banner */}
-            <div className={`p-8 rounded-2xl border backdrop-blur-md relative overflow-hidden transition-all ${
-              teacherData.status === 'free' ? 'bg-emerald-free/10 border-emerald-free/30' :
-              teacherData.status === 'in-lecture' ? 'bg-red-busy/10 border-red-busy/30' :
-              'bg-amber-soon/10 border-amber-soon/30'
-            }`}>
+            {/* Big Status Banner (Hide on Sunday) */}
+            {selectedDay !== 'SUN' && (
+              <div className={`p-8 rounded-2xl border backdrop-blur-md relative overflow-hidden transition-all ${
+                teacherData.status === 'free' ? 'bg-emerald-free/10 border-emerald-free/30' :
+                teacherData.status === 'in-lecture' ? 'bg-red-busy/10 border-red-busy/30' :
+                'bg-amber-soon/10 border-amber-soon/30'
+              }`}>
               
               <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
                 {/* Status Icon Indicator */}
@@ -312,63 +312,79 @@ export default function TeacherStatusPage() {
                 </div>
               </div>
             </div>
+          )}
+            {/* Today's Schedule Timeline / Holiday State */}
+            {selectedDay === 'SUN' ? (
+              <div className="text-center py-16 bg-violet-primary/5 rounded-2xl border border-violet-primary/20 glass-card">
+                <div className="text-6xl mx-auto mb-4">🏖️</div>
+                <h3 className="text-2xl font-bold font-heading text-text-primary mb-2">Today is a Holiday!</h3>
+                <p className="text-text-muted text-lg mb-8">Take a break, relax, and enjoy your Sunday. Teachers have no classes today.</p>
+                
+                <div className="bg-slate-darker/80 border border-violet-primary/30 p-6 rounded-2xl max-w-sm mx-auto shadow-lg">
+                  <h4 className="text-text-primary font-semibold mb-2">Got some free time?</h4>
+                  <p className="text-sm text-text-muted mb-4">Check out <span className="font-bold text-violet-primary">SendiYou</span> to connect with campus folks anonymously!</p>
+                  <a href="/sendiyou" className="inline-block px-6 py-2.5 bg-violet-primary hover:bg-violet-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-md shadow-violet-primary/20 hover:-translate-y-0.5">
+                    Explore SendiYou ✨
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="glass-card p-6 md:p-8">
+                <h3 className="text-xl font-bold font-heading text-text-primary mb-6 flex items-center gap-2">
+                  <Clock className="text-violet-primary w-5 h-5" />
+                  Schedule for {teacherData.day}
+                </h3>
 
-            {/* Today's Schedule Timeline */}
-            <div className="glass-card p-6 md:p-8">
-              <h3 className="text-xl font-bold font-heading text-text-primary mb-6 flex items-center gap-2">
-                <Clock className="text-violet-primary w-5 h-5" />
-                Schedule for {teacherData.day}
-              </h3>
-
-              {teacherData.todaySchedule && teacherData.todaySchedule.length > 0 ? (
-                <div className="space-y-4">
-                  {teacherData.todaySchedule.map((slot, idx) => {
-                    const isCurrent = teacherData.currentClass && 
-                      teacherData.currentClass.start_time === slot.start_time &&
-                      teacherData.currentClass.room === slot.room;
-                    
-                    return (
-                      <div 
-                        key={idx} 
-                        className={`p-4 rounded-xl border transition-all ${
-                          isCurrent 
-                            ? 'bg-violet-primary/10 border-violet-primary shadow-[0_0_20px_rgba(99,91,255,0.15)] relative overflow-hidden' 
-                            : 'bg-slate-card/50 border-slate-border/50 hover:bg-slate-card'
-                        }`}
-                      >
-                        {isCurrent && (
-                          <div className="absolute top-0 left-0 w-1 h-full bg-violet-primary" />
-                        )}
-                        
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex items-start sm:items-center gap-4">
-                            <div className="bg-slate-darker px-3 py-1.5 rounded-lg border border-slate-border text-sm font-semibold text-violet-primary shrink-0">
-                              {slot.start_time} - {slot.end_time}
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-text-primary">{slot.subject}</h4>
-                              <p className="text-sm text-text-muted mt-1">
-                                {slot.class_code} {slot.section} • {slot.session_type}
-                              </p>
-                            </div>
-                          </div>
+                {teacherData.todaySchedule && teacherData.todaySchedule.length > 0 ? (
+                  <div className="space-y-4">
+                    {teacherData.todaySchedule.map((slot, idx) => {
+                      const isCurrent = teacherData.currentClass && 
+                        teacherData.currentClass.start_time === slot.start_time &&
+                        teacherData.currentClass.room === slot.room;
+                      
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`p-4 rounded-xl border transition-all ${
+                            isCurrent 
+                              ? 'bg-violet-primary/10 border-violet-primary shadow-[0_0_20px_rgba(99,91,255,0.15)] relative overflow-hidden' 
+                              : 'bg-slate-card/50 border-slate-border/50 hover:bg-slate-card'
+                          }`}
+                        >
+                          {isCurrent && (
+                            <div className="absolute top-0 left-0 w-1 h-full bg-violet-primary" />
+                          )}
                           
-                          <div className="flex items-center gap-2 text-sm font-medium bg-slate-darker px-3 py-1.5 rounded-lg border border-slate-border shrink-0 self-start sm:self-auto">
-                            <MapPin size={16} className="text-text-secondary" />
-                            <span className="text-text-primary">{slot.room}</span>
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-start sm:items-center gap-4">
+                              <div className="bg-slate-darker px-3 py-1.5 rounded-lg border border-slate-border text-sm font-semibold text-violet-primary shrink-0">
+                                {slot.start_time} - {slot.end_time}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-text-primary">{slot.subject}</h4>
+                                <p className="text-sm text-text-muted mt-1">
+                                  {slot.class_code} {slot.section} • {slot.session_type}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-sm font-medium bg-slate-darker px-3 py-1.5 rounded-lg border border-slate-border shrink-0 self-start sm:self-auto">
+                              <MapPin size={16} className="text-text-secondary" />
+                              <span className="text-text-primary">{slot.room}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-slate-darker/50 rounded-xl border border-slate-border/50">
-                  <BookOpen className="w-10 h-10 text-text-muted mx-auto mb-3 opacity-50" />
-                  <p className="text-text-muted font-medium">No classes scheduled for {teacherData.day}.</p>
-                </div>
-              )}
-            </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-slate-darker/50 rounded-xl border border-slate-border/50">
+                    <BookOpen className="w-10 h-10 text-text-muted mx-auto mb-3 opacity-50" />
+                    <p className="text-text-muted font-medium">No classes scheduled for {teacherData.day}.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
           </div>
         )}
